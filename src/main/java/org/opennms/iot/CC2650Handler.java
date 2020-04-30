@@ -77,9 +77,24 @@ public class CC2650Handler {
         byte[] config = { 0x01 };
         tempConfig.writeValue(config);
 
+        subscribe(tempConfig, (bytes) -> {
+            LOG.info("Got callback!");
+            onNewTempValue(bytes);
+        });
+
         LOG.debug("Subscribing to temperature value changes.");
-        subscribe(tempValue, this::onNewTempValue);
-        onNewTempValue(tempValue.readValue());
+        Thread t = new Thread(() -> {
+            while(true) {
+                onNewTempValue(tempValue.readValue());
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    LOG.warn("Thread interrupted.");
+                    return;
+                }
+            }
+        });
+        t.start();
     }
 
     private void onNewTempValue(byte[] bytes) {
