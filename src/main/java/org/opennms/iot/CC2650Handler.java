@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tinyb.BluetoothDevice;
+import tinyb.BluetoothException;
 import tinyb.BluetoothGattCharacteristic;
 import tinyb.BluetoothGattService;
 
@@ -119,7 +120,11 @@ public class CC2650Handler {
     }
 
     private static void subscribe(BluetoothGattCharacteristic characteristic, Consumer<byte[]> callback) {
-        characteristic.enableValueNotifications(callback::accept);
+        try {
+            characteristic.enableValueNotifications(callback::accept);
+        } catch (BluetoothException be) {
+            LOG.warn("enabling notifications failed.");
+        }
     }
 
     /*
