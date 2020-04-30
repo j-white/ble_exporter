@@ -1,0 +1,37 @@
+version: 2.1
+
+executors:
+  snap-executor:
+    docker:
+      - image: cibuilds/snapcraft:core18
+
+jobs:
+  snap:
+    executor: snap-executor
+    steps:
+      - checkout
+      - run:
+          name: "apt update"
+          command: |
+            apt update && apt install -y maven
+      - run:
+          name: "Build Snap [amd64]"
+          command: |
+            snapcraft snap
+      - run:
+          name: Gather artifacts
+          command: |
+            mkdir -p ~/artifacts/snaps
+            cp *.snap ~/artifacts/snaps/
+      - store_artifacts:
+          path: ~/artifacts/snaps/
+      - persist_to_workspace:
+          root: ~/artifacts
+          paths:
+            - snaps
+
+workflows:
+  version: 2
+  main:
+    jobs:
+      - snap

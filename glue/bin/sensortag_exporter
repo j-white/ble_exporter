@@ -1,0 +1,3 @@
+#!/bin/sh
+"$SNAP"/usr/lib/jvm/java-8-openjdk-$SNAP_ARCH/bin/java -Xms64m -Xmx64m \
+   -jar "$SNAP"/jar/sensortag_exporter.jar

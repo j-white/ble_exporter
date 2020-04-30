@@ -1,0 +1,46 @@
+name: sensortag_exporter
+summary: prototype
+description: prototype
+version: '1'
+confinement: strict
+grade: stable
+base: core18
+
+environment:
+  SHELL: bash
+  LC_ALL: C.UTF-8
+  PATH: $SNAP/bin/:$SNAP/usr/bin/:${PATH}
+
+plugs:
+  bluetooth-control:
+  bluez:
+
+apps:
+  sensortag_exporter:
+    command: bin/sensortag_exporter
+
+parts:
+  glue:
+    plugin: dump
+    source: glue
+
+  app:
+    plugin: maven
+    source: .
+    maven-options:
+      [-DskipTests=true]
+    override-build: |
+      mvn install:install-file \
+         -Dfile=lib/tinyb.jar \
+         -DgroupId=tinyb \
+         -DartifactId=tinyb \
+         -Dversion=1.0 \
+         -Dpackaging=jar \
+         -DgeneratePom=true
+      snapcraftctl build
+
+      install -DT "./target/sensortag_exporter-1.0.0-SNAPSHOT.jar" \
+         "$SNAPCRAFT_PART_INSTALL/jar/sensortag_exporter.jar"
+    build-packages: [openjdk-8-jdk]
+    stage-packages:
+       - "openjdk-8-jre"

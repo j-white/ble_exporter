@@ -1,0 +1,13 @@
+build/
+cmake-build-debug/
+target/
+*.iml
+dependency-reduced-pom.xml
+
+prime/
+stage/
+parts/
+snap/.snapcraft
+*.snap
+
+.idea
