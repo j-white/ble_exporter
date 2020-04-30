@@ -97,6 +97,13 @@ public class CC2650Handler {
 
     private void onNewHumidityValue(byte[] bytes) {
         LOG.debug("Got new humidity value: {}", bytes);
+
+        int rawTemp = (bytes[0] & 0xff) | (bytes[1] << 8);
+        int rawHum  = (bytes[2] & 0xff) | (bytes[3] << 8);
+
+        double temp = (rawTemp / 65536d) * 165 - 40;
+        double hum = (rawHum / 65536d) * 100;
+        LOG.debug("temperature: {}, humidity: {}", temp, hum);
     }
 
     public void startGatheringTemperature() throws InterruptedException {
