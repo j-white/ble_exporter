@@ -58,36 +58,7 @@ public class SensorTagExporter {
         return null;
     }
 
-    /*
-     * Our device should expose a temperature service, which has a UUID we can find out from the data sheet. The service
-     * description of the SensorTag can be found here:
-     * http://processors.wiki.ti.com/images/a/a8/BLE_SensorTag_GATT_Server.pdf. The service we are looking for has the
-     * short UUID AA00 which we insert into the TI Base UUID: f000XXXX-0451-4000-b000-000000000000
-     */
-    static BluetoothGattService getService(BluetoothDevice device, String UUID) throws InterruptedException {
-        System.out.println("Services exposed by device:");
-        BluetoothGattService tempService = null;
-        List<BluetoothGattService> bluetoothServices = null;
 
-        boolean first = true;
-        do {
-            if (first) {
-                first = false;
-            } else {
-                Thread.sleep(4000);
-            }
-            bluetoothServices = device.getServices();
-            if (bluetoothServices == null)
-                return null;
-
-            for (BluetoothGattService service : bluetoothServices) {
-                System.out.println("UUID: " + service.getUUID());
-                if (service.getUUID().equals(UUID))
-                    tempService = service;
-            }
-        } while (bluetoothServices.isEmpty() && running);
-        return tempService;
-    }
 
     static BluetoothGattCharacteristic getCharacteristic(BluetoothGattService service, String UUID) {
         List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
@@ -173,12 +144,9 @@ public class SensorTagExporter {
             }
         });
 
-        BluetoothGattService museSvc = getService(sensor, "0000fe8d-0000-1000-8000-00805f9b34fb");
-        if (museSvc == null) {
-            System.err.println("This device does not have the service we are looking for.");
-            sensor.disconnect();
-            System.exit(-1);
-        }
+
+        CC2650Handler handler = new CC2650Handler(sensor);
+        handler.startGatheringTemperature();
 
         // Wait until stopped
         LOG.info("Waiting...");
@@ -193,8 +161,5 @@ public class SensorTagExporter {
         sensor.disconnect();
     }
 
-    private static void subscribe(BluetoothGattCharacteristic characteristic, Consumer<byte[]> callback) {
-        characteristic.enableValueNotifications(callback::accept);
-    }
 
 }

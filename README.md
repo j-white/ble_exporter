@@ -24,6 +24,6 @@ sudo snap connect sensortag_exporter:bluez bluez
 ```
 
 ```
-sudo sensortag_exporter 00:55:DA:B5:35:5A
+sudo sensortag_exporter A4:34:F1:29:BC:71
 ```
 
