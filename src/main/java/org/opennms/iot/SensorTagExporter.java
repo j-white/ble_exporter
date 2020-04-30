@@ -146,6 +146,7 @@ public class SensorTagExporter {
 
 
         CC2650Handler handler = new CC2650Handler(sensor);
+        handler.startGatheringHumidity();
         handler.startGatheringTemperature();
 
         // Wait until stopped

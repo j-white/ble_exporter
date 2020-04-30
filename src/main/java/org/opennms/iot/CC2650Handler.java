@@ -49,6 +49,20 @@ public class CC2650Handler {
         this.sensor = Objects.requireNonNull(sensor);
     }
 
+    public void startGatheringHumidity() throws InterruptedException {
+        BluetoothGattService humidityService = getService(sensor, Constants.CC2650_HUMIDITY_SVC);
+        if (humidityService == null) {
+            System.err.println("This device does not have the temperature service we are looking for.");
+            sensor.disconnect();
+            System.exit(-1);
+        }
+        LOG.debug("Found humidity service:  {}", humidityService.getUUID());
+
+        for (BluetoothGattCharacteristic chara : humidityService.getCharacteristics()) {
+            LOG.info("chara: {}", chara.getUUID());
+        }
+    }
+
     public void startGatheringTemperature() throws InterruptedException {
         BluetoothGattService tempService = getService(sensor, Constants.CC2650_TEMPERATURE_SVC);
         if (tempService == null) {

@@ -44,6 +44,9 @@ package org.opennms.iot;
  */
 public class Constants {
 
+    public static final String CC2650_HUMIDITY_SVC = "f000aa20-0451-4000-b000-000000000000";
+
+
     public static final String CC2650_TEMPERATURE_SVC = "f000aa00-0451-4000-b000-000000000000";
     public static final String CC2650_TEMPERATURE_VALUE_CHAR = "f000aa01-0451-4000-b000-000000000000";
     public static final String CC2650_TEMPERATURE_CONFIG_CHAR = "f000aa02-0451-4000-b000-000000000000";
