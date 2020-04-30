@@ -55,7 +55,7 @@ public class CC2650Handler {
             sensor.disconnect();
             System.exit(-1);
         }
-        System.out.println("Found service " + tempService.getUUID());
+        LOG.debug("Found temeperature service:  {}", tempService.getUUID());
 
         BluetoothGattCharacteristic tempValue = tempService.find(Constants.CC2650_TEMPERATURE_VALUE_CHAR);
         BluetoothGattCharacteristic tempConfig = tempService.find(Constants.CC2650_TEMPERATURE_CONFIG_CHAR);
@@ -67,7 +67,7 @@ public class CC2650Handler {
             System.exit(-1);
         }
 
-        System.out.println("Found the temperature characteristics");
+        LOG.debug("Found the temperature characteristics");
 
         /*
          * Turn on the Temperature Service by writing 1 in the configuration characteristic, as mentioned in the PDF
@@ -77,8 +77,9 @@ public class CC2650Handler {
         byte[] config = { 0x01 };
         tempConfig.writeValue(config);
 
+        LOG.debug("Subscribing to temperature value changes.");
         subscribe(tempValue, this::onNewTempValue);
-
+        onNewTempValue(tempValue.readValue());
     }
 
     private void onNewTempValue(byte[] bytes) {
