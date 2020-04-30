@@ -58,9 +58,45 @@ public class CC2650Handler {
         }
         LOG.debug("Found humidity service:  {}", humidityService.getUUID());
 
-        for (BluetoothGattCharacteristic chara : humidityService.getCharacteristics()) {
-            LOG.info("chara: {}", chara.getUUID());
+        BluetoothGattCharacteristic humValue = humidityService.find(Constants.CC2650_HUMIDITY_VALUE_CHAR);
+        BluetoothGattCharacteristic humConfig = humidityService.find(Constants.CC2650_HUMIDITY_CONFIG_CHAR);
+        BluetoothGattCharacteristic humPeriod = humidityService.find(Constants.CC2650_HUMIDITY_PERIOD_CHAR);
+
+        if (humValue == null || humConfig == null || humPeriod == null) {
+            System.err.println("Could not find the correct characteristics.");
+            sensor.disconnect();
+            System.exit(-1);
         }
+
+        LOG.debug("Found the humidity characteristics");
+
+
+        byte[] config = { 0x01 };
+        humConfig.writeValue(config);
+
+        subscribe(humConfig, (bytes) -> {
+            LOG.info("Got callback!");
+            onNewHumidityValue(bytes);
+        });
+
+        LOG.debug("Subscribing to humidity value changes.");
+        Thread t = new Thread(() -> {
+            while(true) {
+                onNewHumidityValue(humValue.readValue());
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    LOG.warn("Thread interrupted.");
+                    return;
+                }
+            }
+        });
+        t.start();
+    }
+
+
+    private void onNewHumidityValue(byte[] bytes) {
+        LOG.debug("Got new humidity value: {}", bytes);
     }
 
     public void startGatheringTemperature() throws InterruptedException {
