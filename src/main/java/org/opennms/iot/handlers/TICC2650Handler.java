@@ -26,12 +26,13 @@
  *     http://www.opennms.com/
  *******************************************************************************/
 
-package org.opennms.iot;
+package org.opennms.iot.handlers;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import org.opennms.iot.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,17 +41,32 @@ import tinyb.BluetoothException;
 import tinyb.BluetoothGattCharacteristic;
 import tinyb.BluetoothGattService;
 
-public class CC2650Handler {
-    private static final Logger LOG = LoggerFactory.getLogger(CC2650Handler.class);
+public class TICC2650Handler implements Handler {
+    private static final Logger LOG = LoggerFactory.getLogger(TICC2650Handler.class);
 
     private BluetoothDevice sensor;
 
-    public CC2650Handler(BluetoothDevice sensor) {
+    public TICC2650Handler(BluetoothDevice sensor) {
         this.sensor = Objects.requireNonNull(sensor);
     }
 
+    public static boolean handles(BluetoothDevice sensor) {
+        try {
+            // FIXME: There is a better way to do this
+            return getService(sensor, TICC2650Constants.CC2650_HUMIDITY_SVC)  != null;
+        } catch (InterruptedException e) {
+            return false;
+        }
+    }
+
+    @Override
+    public void startGatheringData() throws InterruptedException {
+        startGatheringHumidity();
+        startGatheringTemperature();
+    }
+
     public void startGatheringHumidity() throws InterruptedException {
-        BluetoothGattService humidityService = getService(sensor, Constants.CC2650_HUMIDITY_SVC);
+        BluetoothGattService humidityService = getService(sensor, TICC2650Constants.CC2650_HUMIDITY_SVC);
         if (humidityService == null) {
             System.err.println("This device does not have the temperature service we are looking for.");
             sensor.disconnect();
@@ -58,9 +74,9 @@ public class CC2650Handler {
         }
         LOG.debug("Found humidity service:  {}", humidityService.getUUID());
 
-        BluetoothGattCharacteristic humValue = humidityService.find(Constants.CC2650_HUMIDITY_VALUE_CHAR);
-        BluetoothGattCharacteristic humConfig = humidityService.find(Constants.CC2650_HUMIDITY_CONFIG_CHAR);
-        BluetoothGattCharacteristic humPeriod = humidityService.find(Constants.CC2650_HUMIDITY_PERIOD_CHAR);
+        BluetoothGattCharacteristic humValue = humidityService.find(TICC2650Constants.CC2650_HUMIDITY_VALUE_CHAR);
+        BluetoothGattCharacteristic humConfig = humidityService.find(TICC2650Constants.CC2650_HUMIDITY_CONFIG_CHAR);
+        BluetoothGattCharacteristic humPeriod = humidityService.find(TICC2650Constants.CC2650_HUMIDITY_PERIOD_CHAR);
 
         if (humValue == null || humConfig == null || humPeriod == null) {
             System.err.println("Could not find the correct characteristics.");
@@ -94,7 +110,6 @@ public class CC2650Handler {
         t.start();
     }
 
-
     private void onNewHumidityValue(byte[] bytes) {
         LOG.debug("Got new humidity value: {}", bytes);
 
@@ -107,7 +122,7 @@ public class CC2650Handler {
     }
 
     public void startGatheringTemperature() throws InterruptedException {
-        BluetoothGattService tempService = getService(sensor, Constants.CC2650_TEMPERATURE_SVC);
+        BluetoothGattService tempService = getService(sensor, TICC2650Constants.CC2650_TEMPERATURE_SVC);
         if (tempService == null) {
             System.err.println("This device does not have the temperature service we are looking for.");
             sensor.disconnect();
@@ -115,9 +130,9 @@ public class CC2650Handler {
         }
         LOG.debug("Found temeperature service:  {}", tempService.getUUID());
 
-        BluetoothGattCharacteristic tempValue = tempService.find(Constants.CC2650_TEMPERATURE_VALUE_CHAR);
-        BluetoothGattCharacteristic tempConfig = tempService.find(Constants.CC2650_TEMPERATURE_CONFIG_CHAR);
-        BluetoothGattCharacteristic tempPeriod = tempService.find(Constants.CC2650_TEMPERATURE_PERIOD_CHAR);
+        BluetoothGattCharacteristic tempValue = tempService.find(TICC2650Constants.CC2650_TEMPERATURE_VALUE_CHAR);
+        BluetoothGattCharacteristic tempConfig = tempService.find(TICC2650Constants.CC2650_TEMPERATURE_CONFIG_CHAR);
+        BluetoothGattCharacteristic tempPeriod = tempService.find(TICC2650Constants.CC2650_TEMPERATURE_PERIOD_CHAR);
 
         if (tempValue == null || tempConfig == null || tempPeriod == null) {
             System.err.println("Could not find the correct characteristics.");

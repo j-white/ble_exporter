@@ -5,8 +5,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 
+import org.opennms.iot.handlers.TICC2650Handler;
+import org.opennms.iot.handlers.PolarH7Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,8 +17,8 @@ import tinyb.BluetoothGattCharacteristic;
 import tinyb.BluetoothGattService;
 import tinyb.BluetoothManager;
 
-public class SensorTagExporter {
-    private static final Logger LOG = LoggerFactory.getLogger(SensorTagExporter.class);
+public class BLEExporter {
+    private static final Logger LOG = LoggerFactory.getLogger(BLEExporter.class);
 
     static boolean running = true;
 
@@ -81,7 +82,7 @@ public class SensorTagExporter {
      * The API used in this example is based on TinyB v0.3, which only supports polling, but v0.4 will introduce a
      * simplied API for discovering devices and services.
      */
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws Exception {
         NativeLibrary.load();
 
         if (args.length < 1) {
@@ -145,9 +146,15 @@ public class SensorTagExporter {
         });
 
 
-        CC2650Handler handler = new CC2650Handler(sensor);
-        handler.startGatheringHumidity();
-        handler.startGatheringTemperature();
+        Handler handler;
+        if (TICC2650Handler.handles(sensor)) {
+            handler = new TICC2650Handler(sensor);
+        } else if (PolarH7Handler.handles(sensor)) {
+            handler = new PolarH7Handler(sensor);
+        } else {
+            throw new UnsupportedOperationException("Unsupported sensor :(");
+        }
+        handler.startGatheringData();
 
         // Wait until stopped
         LOG.info("Waiting...");

@@ -1,4 +1,4 @@
-name: sensortag_exporter
+name: ble_exporter
 summary: prototype
 description: prototype
 version: '1'
@@ -16,8 +16,8 @@ plugs:
   bluez:
 
 apps:
-  sensortag_exporter:
-    command: bin/sensortag_exporter
+  ble_exporter:
+    command: bin/ble_exporter
 
 parts:
   glue:
@@ -39,8 +39,8 @@ parts:
          -DgeneratePom=true
       snapcraftctl build
 
-      install -DT "./target/sensortag_exporter-1.0.0-SNAPSHOT.jar" \
-         "$SNAPCRAFT_PART_INSTALL/jar/sensortag_exporter.jar"
+      install -DT "./target/ble_exporter-1.0.0-SNAPSHOT.jar" \
+         "$SNAPCRAFT_PART_INSTALL/jar/ble_exporter.jar"
     build-packages: [openjdk-8-jdk]
     stage-packages:
        - "openjdk-8-jre"

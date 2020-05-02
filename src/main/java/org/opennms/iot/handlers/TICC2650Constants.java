@@ -26,7 +26,7 @@
  *     http://www.opennms.com/
  *******************************************************************************/
 
-package org.opennms.iot;
+package org.opennms.iot.handlers;
 
 /**
  * UUID: f000aa20-0451-4000-b000-000000000000
@@ -42,7 +42,7 @@ package org.opennms.iot;
  * UUID: 00001801-0000-1000-8000-00805f9b34fb
  * UUID: f000aa70-0451-4000-b000-000000000000
  */
-public class Constants {
+public class TICC2650Constants {
 
     public static final String CC2650_HUMIDITY_SVC = "f000aa20-0451-4000-b000-000000000000";
     public static final String CC2650_HUMIDITY_VALUE_CHAR = "f000aa21-0451-4000-b000-000000000000";
@@ -53,6 +53,5 @@ public class Constants {
     public static final String CC2650_TEMPERATURE_VALUE_CHAR = "f000aa01-0451-4000-b000-000000000000";
     public static final String CC2650_TEMPERATURE_CONFIG_CHAR = "f000aa02-0451-4000-b000-000000000000";
     public static final String CC2650_TEMPERATURE_PERIOD_CHAR = "f000aa03-0451-4000-b000-000000000000";
-
 
 }
