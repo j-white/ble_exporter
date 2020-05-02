@@ -35,6 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import org.opennms.iot.Handler;
@@ -138,14 +139,18 @@ public class PolarH7Handler extends BaseHandler {
                 .setName("polar-h7")
                 .setTimestamp(received_at);
         bpm.ifPresent(val -> {
+            // Skip non-positive values
+            if (val <= 0) {
+                return;
+            }
             metricBuilder.putFields("beats_per_minute", FieldValue.newBuilder().setIntValue(val).build());
         });
         ene.ifPresent(val -> {
             metricBuilder.putFields("energy_expended", FieldValue.newBuilder().setIntValue(val).build());
         });
-        int i = 0;
+        AtomicInteger rrIndex = new AtomicInteger();
         rrs.forEach(rr -> {
-            metricBuilder.putFields("rr" + i, FieldValue.newBuilder().setFloatValue(rr).build());
+            metricBuilder.putFields("rr" + rrIndex.getAndIncrement(), FieldValue.newBuilder().setFloatValue(rr).build());
         });
         eventBuilder.addMetrics(metricBuilder);
 
