@@ -30,6 +30,8 @@ package org.opennms.iot.handlers;
 
 import static org.opennms.iot.handlers.TICC2650Handler.getService;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 
 import org.opennms.iot.Handler;
@@ -74,6 +76,46 @@ public class PolarH7Handler implements Handler {
     }
 
     private void handleHrValue(byte[] bytes) {
-        LOG.info("Got HR value: {}", bytes[1]);
+
+        byte hr_format_mask = 0x01;
+        byte energy_expended_mask = 0x08;
+        byte rr_interval_mask = 0x10;
+
+        int offset = 0;
+        // skip over flags
+        offset += 1;
+
+        // BPM calculation
+        int bpm = -1;
+        if (bytes.length >= 2) {
+            if ((bytes[0] & hr_format_mask) == 0) {
+                // HR is a uint8
+                bpm = bytes[offset];
+                offset+=1;
+            } else {
+                // HR is a uint16
+                bpm = (bytes[offset] & 0xff) | (bytes[offset + 1] << 8);
+                offset+=2;
+            }
+        }
+        LOG.info("Got BPM: {}", bpm);
+
+        int ene = -1;
+        if ((bytes[0] & energy_expended_mask) != 0) {
+            ene = (bytes[offset] & 0xff) | (bytes[offset+1] << 8);
+            offset+=2;
+            LOG.info("Got ENE: {}", ene);
+        }
+
+        List<Double> rrs = new LinkedList<>();
+        if ((bytes[0] & rr_interval_mask) != 0) {
+            while(offset < bytes.length) {
+                int rr = (bytes[offset] & 0xff) | (bytes[offset+1] << 8);
+                double rr_value = rr/1024.0d * 1000.d;
+                rrs.add(rr_value);
+                offset+=2;
+            }
+            LOG.info("Got RRs: {}", rrs);
+        }
     }
 }
