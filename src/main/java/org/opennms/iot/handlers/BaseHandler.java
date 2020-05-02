@@ -26,15 +26,29 @@
  *     http://www.opennms.com/
  *******************************************************************************/
 
-package org.opennms.iot;
+package org.opennms.iot.handlers;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
+import org.opennms.iot.Handler;
 import org.opennms.iot.ble.proto.Event;
-import org.opennms.iot.ble.proto.Metric;
 
-public interface Handler {
-    void startGatheringData() throws Exception;
+public abstract class BaseHandler implements Handler {
 
-    void registerConsumer(Consumer<Event> consumer);
+    private List<Consumer<Event>> consumers = new CopyOnWriteArrayList<>();
+
+    @Override
+    public synchronized void registerConsumer(Consumer<Event> consumer) {
+        consumers.add(consumer);
+    }
+
+    public void broadcast(Event event) {
+        consumers.forEach(c -> c.accept(event));
+    }
+
+    public void doIt() {
+
+    }
 }

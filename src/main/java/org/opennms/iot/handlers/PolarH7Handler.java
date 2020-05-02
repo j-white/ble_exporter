@@ -28,22 +28,31 @@
 
 package org.opennms.iot.handlers;
 
+import static org.opennms.iot.Bluetooth.buildSensorFromDevice;
 import static org.opennms.iot.handlers.TICC2650Handler.getService;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.opennms.iot.Handler;
+import org.opennms.iot.ble.proto.Event;
+import org.opennms.iot.ble.proto.FieldValue;
+import org.opennms.iot.ble.proto.Metric;
+import org.opennms.iot.ble.proto.Sensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.protobuf.Descriptors;
 
 import tinyb.BluetoothDevice;
 import tinyb.BluetoothGattCharacteristic;
 import tinyb.BluetoothGattService;
 
-public class PolarH7Handler implements Handler {
-    private static final Logger LOG = LoggerFactory.getLogger(TICC2650Handler.class);
+public class PolarH7Handler extends BaseHandler {
+    private static final Logger LOG = LoggerFactory.getLogger(PolarH7Handler.class);
 
     public static final String H7_HR_SVC = "0000180d-0000-1000-8000-00805f9b34fb";
     public static final String H7_HR_CHAR = "00002a37-0000-1000-8000-00805f9b34fb";
@@ -76,7 +85,7 @@ public class PolarH7Handler implements Handler {
     }
 
     private void handleHrValue(byte[] bytes) {
-
+        long received_at = System.currentTimeMillis();
         byte hr_format_mask = 0x01;
         byte energy_expended_mask = 0x08;
         byte rr_interval_mask = 0x10;
@@ -86,28 +95,32 @@ public class PolarH7Handler implements Handler {
         offset += 1;
 
         // BPM calculation
-        int bpm = -1;
+        Optional<Integer> bpm;
         if (bytes.length >= 2) {
             if ((bytes[0] & hr_format_mask) == 0) {
                 // HR is a uint8
-                bpm = bytes[offset];
+                bpm = Optional.of((int)bytes[offset]);
                 offset+=1;
             } else {
                 // HR is a uint16
-                bpm = (bytes[offset] & 0xff) | (bytes[offset + 1] << 8);
+                bpm = Optional.of((int)(bytes[offset] & 0xff) | (bytes[offset + 1] << 8));
                 offset+=2;
             }
+        } else {
+            bpm = Optional.empty();
         }
         LOG.info("Got BPM: {}", bpm);
 
-        int ene = -1;
+        final Optional<Integer> ene;
         if ((bytes[0] & energy_expended_mask) != 0) {
-            ene = (bytes[offset] & 0xff) | (bytes[offset+1] << 8);
+            ene = Optional.of((bytes[offset] & 0xff) | (bytes[offset+1] << 8));
             offset+=2;
-            LOG.info("Got ENE: {}", ene);
+        } else {
+            ene = Optional.empty();
         }
+        LOG.info("Got ENE: {}", ene);
 
-        List<Double> rrs = new LinkedList<>();
+        final List<Double> rrs = new LinkedList<>();
         if ((bytes[0] & rr_interval_mask) != 0) {
             while(offset < bytes.length) {
                 int rr = (bytes[offset] & 0xff) | (bytes[offset+1] << 8);
@@ -115,7 +128,27 @@ public class PolarH7Handler implements Handler {
                 rrs.add(rr_value);
                 offset+=2;
             }
-            LOG.info("Got RRs: {}", rrs);
         }
+        LOG.info("Got RRs: {}", rrs);
+
+        Event.Builder eventBuilder = Event.newBuilder()
+                .setSensor(buildSensorFromDevice(sensor));
+
+        Metric.Builder metricBuilder = Metric.newBuilder()
+                .setName("polar-h7")
+                .setTimestamp(received_at);
+
+        bpm.ifPresent(val -> {
+            metricBuilder.putFields("beats_per_minute", FieldValue.newBuilder().setIntValue(val).build());
+        });
+        ene.ifPresent(val -> {
+            metricBuilder.putFields("energy_expended", FieldValue.newBuilder().setIntValue(val).build());
+        });
+        int i = 0;
+        rrs.forEach(rr -> {
+            metricBuilder.putFields("rr" + i, FieldValue.newBuilder().setFloatValue(rr).build());
+        });
+
+        broadcast(eventBuilder.build());
     }
 }

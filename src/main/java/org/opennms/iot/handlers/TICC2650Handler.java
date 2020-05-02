@@ -28,11 +28,16 @@
 
 package org.opennms.iot.handlers;
 
+import static org.opennms.iot.Bluetooth.buildSensorFromDevice;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 import org.opennms.iot.Handler;
+import org.opennms.iot.ble.proto.Event;
+import org.opennms.iot.ble.proto.FieldValue;
+import org.opennms.iot.ble.proto.Metric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +46,7 @@ import tinyb.BluetoothException;
 import tinyb.BluetoothGattCharacteristic;
 import tinyb.BluetoothGattService;
 
-public class TICC2650Handler implements Handler {
+public class TICC2650Handler extends BaseHandler {
     private static final Logger LOG = LoggerFactory.getLogger(TICC2650Handler.class);
 
     private BluetoothDevice sensor;
@@ -119,6 +124,17 @@ public class TICC2650Handler implements Handler {
         double temp = (rawTemp / 65536d) * 165 - 40;
         double hum = (rawHum / 65536d) * 100;
         LOG.debug("temperature: {}, humidity: {}", temp, hum);
+
+        Event.Builder eventBuilder = Event.newBuilder()
+                .setSensor(buildSensorFromDevice(sensor));
+
+        Metric.Builder metricBuilder = Metric.newBuilder()
+                .setName("cc2650")
+                .setTimestamp(System.currentTimeMillis());
+        metricBuilder.putFields("temperature", FieldValue.newBuilder().setFloatValue(temp).build());
+        metricBuilder.putFields("humidity", FieldValue.newBuilder().setFloatValue(hum).build());
+
+        broadcast(eventBuilder.build());
     }
 
     public void startGatheringTemperature() throws InterruptedException {

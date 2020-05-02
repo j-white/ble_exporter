@@ -28,13 +28,29 @@
 
 package org.opennms.iot;
 
-import java.util.function.Consumer;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.opennms.iot.ble.proto.BLEExporterGrpc;
+import org.opennms.iot.ble.proto.Client;
 import org.opennms.iot.ble.proto.Event;
-import org.opennms.iot.ble.proto.Metric;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public interface Handler {
-    void startGatheringData() throws Exception;
+import io.grpc.stub.StreamObserver;
 
-    void registerConsumer(Consumer<Event> consumer);
+public class BLEExporterImpl extends BLEExporterGrpc.BLEExporterImplBase {
+    private static final Logger LOG = LoggerFactory.getLogger(BLEExporterImpl.class);
+
+    private List<StreamObserver<Event>> observers = new CopyOnWriteArrayList<>();
+
+    @Override
+    public void streamEvents(Client request, StreamObserver<Event> observer) {
+        observers.add(observer);
+    }
+
+    public synchronized void broadcast(Event event) {
+        LOG.debug("Broadcasting event to {} observers: {}", observers.size(), event);
+        observers.forEach(o -> o.onNext(event));
+    }
 }

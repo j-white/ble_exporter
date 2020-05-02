@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "org.opennms.iot.ble.proto";
+option java_outer_classname = "BLEExporterProto";
+
+package ble;
+
+service BLEExporter {
+    rpc StreamEvents(Client) returns (stream Event) {}
+}
+
+message Client {
+    string name = 1;
+    string id = 2;
+    map<string,string> tags = 3;
+}
+
+message Event {
+    Sensor sensor = 1;
+    int64 timestamp = 2;
+    string message = 3;
+    repeated Metric metrics = 4;
+}
+
+message Sensor {
+    string hw_address = 1;
+    double rssi = 2;
+    double tx_power = 3;
+}
+
+message Metric {
+    string name = 1;
+    map<string, string> tags = 2;
+    map<string, FieldValue> fields = 3;
+    int64 timestamp = 4;
+}
+
+message FieldValue {
+    oneof value {
+        string string_value = 1;
+        double float_value = 2;
+        int64 int_value = 3;
+        bool bool_value = 4;
+    }
+}
