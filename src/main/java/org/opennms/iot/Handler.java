@@ -31,10 +31,9 @@ package org.opennms.iot;
 import java.util.function.Consumer;
 
 import org.opennms.iot.ble.proto.Event;
-import org.opennms.iot.ble.proto.Metric;
 
 public interface Handler {
-    void startGatheringData() throws Exception;
+    void startGatheringData() throws InterruptedException;
 
     void registerConsumer(Consumer<Event> consumer);
 }

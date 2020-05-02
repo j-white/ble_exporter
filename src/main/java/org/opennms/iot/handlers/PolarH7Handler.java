@@ -73,7 +73,7 @@ public class PolarH7Handler extends BaseHandler {
     }
 
     @Override
-    public void startGatheringData() throws Exception {
+    public void startGatheringData() throws InterruptedException {
         BluetoothGattService hrService = getService(sensor, H7_HR_SVC);
         if (hrService == null) {
             throw new IllegalStateException("Could not find HR service.");

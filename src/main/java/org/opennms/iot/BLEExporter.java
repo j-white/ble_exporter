@@ -2,11 +2,13 @@ package org.opennms.iot;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -41,6 +43,8 @@ public class BLEExporter {
     private List<String> arguments = new ArrayList<>();
 
     private BLEExporterImpl bleExporterSvc = new BLEExporterImpl();
+
+    private List<SensorTracker> sensorTrackers = new LinkedList<>();
 
     private boolean running = true;
 
@@ -85,35 +89,12 @@ public class BLEExporter {
         // Now start the gRPC service
         startGrpcServer();
 
-        BluetoothDevice sensor = Bluetooth.getDevice(arguments.get(0));
-
-        /*
-         * After we find the device we can stop looking for other devices.
-         */
-        try {
-            manager.stopDiscovery();
-        } catch (BluetoothException e) {
-            System.err.println("Discovery could not be stopped.");
-        }
-
-        if (sensor == null) {
-            System.err.println("No sensor found with the provided address.");
-            System.exit(-1);
-        }
-
-        System.out.print("Found device: ");
-        Bluetooth.printDevice(sensor);
-
-        if (sensor.connect())
-            System.out.println("Sensor with the provided address connected");
-        else {
-            System.out.println("Could not connect device.");
-            System.exit(-1);
-        }
+        sensorTrackers = arguments.stream()
+                .map(SensorTracker::new)
+                .collect(Collectors.toList());
 
         Lock lock = new ReentrantLock();
         Condition cv = lock.newCondition();
-
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 running = false;
@@ -126,21 +107,10 @@ public class BLEExporter {
             }
         });
 
+        sensorTrackers.forEach(SensorTracker::start);
 
-        Handler handler;
-        // FIXME - we need a nicer way to register these
-        if (TICC2650Handler.handles(sensor)) {
-            handler = new TICC2650Handler(sensor);
-        } else if (PolarH7Handler.handles(sensor)) {
-            handler = new PolarH7Handler(sensor);
-        } else {
-            throw new UnsupportedOperationException("Unsupported sensor :(");
-        }
-
-        handler.registerConsumer(bleExporterSvc::broadcast);
-        handler.startGatheringData();
-
-
+        // TODO: Eventually stop discovery
+        //  manager.stopDiscovery();
 
         // Wait until stopped
         LOG.info("Waiting...");
@@ -152,7 +122,7 @@ public class BLEExporter {
                 lock.unlock();
             }
         }
-        sensor.disconnect();
+        sensorTrackers.forEach(SensorTracker::stop);
     }
 
     private void startGrpcServer() throws IOException {
@@ -184,7 +154,5 @@ public class BLEExporter {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
         }
     }
-
-
 
 }
