@@ -9,7 +9,12 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Localizable;
 import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.ParserProperties;
+import org.kohsuke.args4j.spi.Messages;
 import org.opennms.iot.ble.proto.BLEExporterGrpc;
 import org.opennms.iot.handlers.TICC2650Handler;
 import org.opennms.iot.handlers.PolarH7Handler;
@@ -33,7 +38,7 @@ public class BLEExporter {
     private int port = 9002;
 
     @Argument
-    private List<String> arguments = new ArrayList<String>();
+    private List<String> arguments = new ArrayList<>();
 
     private BLEExporterImpl bleExporterSvc = new BLEExporterImpl();
 
@@ -44,12 +49,24 @@ public class BLEExporter {
     }
 
     public void doMain(String[] args) throws Exception {
-        NativeLibrary.load();
+        ParserProperties parserProperties = ParserProperties.defaults()
+                .withUsageWidth(80);
+        CmdLineParser parser = new CmdLineParser(this, parserProperties);
 
-        if (args.length < 1) {
-            System.err.println("Run with <device_address> argument");
-            System.exit(-1);
+        try {
+            parser.parseArgument(args);
+            if( arguments.isEmpty() ) {
+                throw new CmdLineException(parser, "At least one device address is required.");
+            }
+        } catch( CmdLineException e ) {
+            System.err.println(e.getMessage());
+            System.err.println("ble_exporter [options...] arguments...");
+            // print the list of available options
+            parser.printUsage(System.err);
+            System.err.println();
+            return;
         }
+        NativeLibrary.load();
 
         /*
          * To start looking of the device, we first must initialize the TinyB library. The way of interacting with the
