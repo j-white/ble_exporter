@@ -54,6 +54,8 @@ public class SensorTracker implements Runnable {
 
     public void start() {
         thread = new Thread(this);
+        thread.setName("SensorTracker-" + sensorMac);
+        thread.start();
     }
 
     @Override
