@@ -131,10 +131,9 @@ public class TICC2650Handler extends BaseHandler {
         Metric.Builder metricBuilder = Metric.newBuilder()
                 .setName("cc2650")
                 .setTimestamp(System.currentTimeMillis());
-        eventBuilder.addMetrics(metricBuilder);
-
         metricBuilder.putFields("temperature", FieldValue.newBuilder().setFloatValue(temp).build());
         metricBuilder.putFields("humidity", FieldValue.newBuilder().setFloatValue(hum).build());
+        eventBuilder.addMetrics(metricBuilder);
 
         broadcast(eventBuilder.build());
     }

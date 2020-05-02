@@ -137,8 +137,6 @@ public class PolarH7Handler extends BaseHandler {
         Metric.Builder metricBuilder = Metric.newBuilder()
                 .setName("polar-h7")
                 .setTimestamp(received_at);
-        eventBuilder.addMetrics(metricBuilder);
-
         bpm.ifPresent(val -> {
             metricBuilder.putFields("beats_per_minute", FieldValue.newBuilder().setIntValue(val).build());
         });
@@ -149,6 +147,7 @@ public class PolarH7Handler extends BaseHandler {
         rrs.forEach(rr -> {
             metricBuilder.putFields("rr" + i, FieldValue.newBuilder().setFloatValue(rr).build());
         });
+        eventBuilder.addMetrics(metricBuilder);
 
         broadcast(eventBuilder.build());
     }
