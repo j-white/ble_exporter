@@ -67,6 +67,7 @@ public class SensorTracker implements Runnable {
                    Thread.sleep(5000);
                 }
 
+                LOG.info("Trying to connect to sensor: {}", sensorMac);
                 BluetoothDevice sensor = Bluetooth.getDevice(sensorMac);
                 if (sensor == null) {
                     LOG.warn("No sensor found with the provided address: {}", sensorMac);
@@ -93,6 +94,11 @@ public class SensorTracker implements Runnable {
 
                 handler.registerConsumer(bleExporterSvc::broadcast);
                 handler.startGatheringData();
+
+                while(sensor.getConnected()) {
+                    Thread.sleep(500);
+                }
+                LOG.warn("Sensor {} disconnected.", sensorMac);
             }
         } catch (InterruptedException e) {
             LOG.info("Interrupted. Stopping tracking thread for: {}", sensorMac);
