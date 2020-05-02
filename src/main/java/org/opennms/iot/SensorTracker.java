@@ -77,10 +77,15 @@ public class SensorTracker implements Runnable {
                 }
                 LOG.info("Found sensor: {}", sensorMac);
 
-                if (sensor.connect())
-                    LOG.info("Connected to sensor: {}", sensorMac);
-                else {
-                    LOG.warn("Could not connect to sensor: {}", sensorMac);
+                try {
+                    if (sensor.connect())
+                        LOG.info("Connected to sensor: {}", sensorMac);
+                    else {
+                        LOG.warn("Could not connect to sensor: {}", sensorMac);
+                        continue;
+                    }
+                } catch (BluetoothException ble) {
+                    LOG.warn("Could not connect to sensor: {}", sensorMac, ble);
                     continue;
                 }
 
