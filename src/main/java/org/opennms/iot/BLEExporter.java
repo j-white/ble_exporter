@@ -90,7 +90,7 @@ public class BLEExporter {
         startGrpcServer();
 
         sensorTrackers = arguments.stream()
-                .map(SensorTracker::new)
+                .map(mac -> new SensorTracker(bleExporterSvc, mac))
                 .collect(Collectors.toList());
 
         Lock lock = new ReentrantLock();
