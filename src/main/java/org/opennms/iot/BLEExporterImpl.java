@@ -46,11 +46,13 @@ public class BLEExporterImpl extends BLEExporterGrpc.BLEExporterImplBase {
 
     @Override
     public void streamEvents(Client request, StreamObserver<Event> observer) {
-        observers.add(observer);
+        observers.add(0, observer);
     }
 
     public synchronized void broadcast(Event event) {
         LOG.debug("Broadcasting event to {} observers: {}", observers.size(), event);
-        observers.forEach(o -> o.onNext(event));
+        observers.forEach(o -> {
+            o.onNext(event);
+        });
     }
 }
