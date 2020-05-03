@@ -84,7 +84,32 @@ public class Bluetooth {
         return null;
     }
 
-    static BluetoothGattCharacteristic getCharacteristic(BluetoothGattService service, String UUID) {
+    public static BluetoothGattService getService(BluetoothDevice device, String UUID) throws InterruptedException {
+        System.out.println("Services exposed by device:");
+        BluetoothGattService tempService = null;
+        List<BluetoothGattService> bluetoothServices = null;
+
+        boolean first = true;
+        do {
+            if (first) {
+                first = false;
+            } else {
+                Thread.sleep(4000);
+            }
+            bluetoothServices = device.getServices();
+            if (bluetoothServices == null)
+                return null;
+
+            for (BluetoothGattService service : bluetoothServices) {
+                System.out.println("UUID: " + service.getUUID());
+                if (service.getUUID().equals(UUID))
+                    tempService = service;
+            }
+        } while (bluetoothServices.isEmpty());
+        return tempService;
+    }
+
+    public static BluetoothGattCharacteristic getCharacteristic(BluetoothGattService service, String UUID) {
         List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
         if (characteristics == null)
             return null;

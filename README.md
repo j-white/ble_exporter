@@ -1,9 +1,12 @@
 # ble_exporter
 
+Proof of concept code for streaming metrics from BLE devices.
+
 ## Supported devices
 
 * Polar HL7
 * SensorTag CC2650
+* Muse 2
 
 ## Building from source
 
@@ -32,8 +35,8 @@ sudo snap connect ble_exporter:bluetooth-control
 sudo snap connect ble_exporter:bluez bluez
 ```
 
-```
-sudo ble_exporter A4:34:F1:29:BC:71
-sudo ble_exporter 00:22:D0:26:58:91
-```
+## MACs
 
+CC2650: `A4:34:F1:29:BC:71`
+Polar H7: `00:22:D0:26:58:91`
+Muse 2: `00:55:DA:B5:35:5A`

@@ -29,6 +29,7 @@
 package org.opennms.iot.handlers;
 
 import static org.opennms.iot.Bluetooth.buildSensorFromDevice;
+import static org.opennms.iot.Bluetooth.getService;
 
 import java.util.List;
 import java.util.Objects;
@@ -141,11 +142,9 @@ public class TICC2650Handler extends BaseHandler {
     public void startGatheringTemperature() throws InterruptedException {
         BluetoothGattService tempService = getService(sensor, TICC2650Constants.CC2650_TEMPERATURE_SVC);
         if (tempService == null) {
-            System.err.println("This device does not have the temperature service we are looking for.");
-            sensor.disconnect();
-            System.exit(-1);
+            throw new IllegalStateException("Could not find temperature service.");
         }
-        LOG.debug("Found temeperature service:  {}", tempService.getUUID());
+        LOG.debug("Found temperature service:  {}", tempService.getUUID());
 
         BluetoothGattCharacteristic tempValue = tempService.find(TICC2650Constants.CC2650_TEMPERATURE_VALUE_CHAR);
         BluetoothGattCharacteristic tempConfig = tempService.find(TICC2650Constants.CC2650_TEMPERATURE_CONFIG_CHAR);
@@ -216,34 +215,4 @@ public class TICC2650Handler extends BaseHandler {
         }
     }
 
-    /*
-     * Our device should expose a temperature service, which has a UUID we can find out from the data sheet. The service
-     * description of the SensorTag can be found here:
-     * http://processors.wiki.ti.com/images/a/a8/BLE_SensorTag_GATT_Server.pdf. The service we are looking for has the
-     * short UUID AA00 which we insert into the TI Base UUID: f000XXXX-0451-4000-b000-000000000000
-     */
-    static BluetoothGattService getService(BluetoothDevice device, String UUID) throws InterruptedException {
-        System.out.println("Services exposed by device:");
-        BluetoothGattService tempService = null;
-        List<BluetoothGattService> bluetoothServices = null;
-
-        boolean first = true;
-        do {
-            if (first) {
-                first = false;
-            } else {
-                Thread.sleep(4000);
-            }
-            bluetoothServices = device.getServices();
-            if (bluetoothServices == null)
-                return null;
-
-            for (BluetoothGattService service : bluetoothServices) {
-                System.out.println("UUID: " + service.getUUID());
-                if (service.getUUID().equals(UUID))
-                    tempService = service;
-            }
-        } while (bluetoothServices.isEmpty());
-        return tempService;
-    }
 }

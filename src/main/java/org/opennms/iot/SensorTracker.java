@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.opennms.iot.handlers.PolarH7Handler;
 import org.opennms.iot.handlers.TICC2650Handler;
+import org.opennms.iot.muse.MuseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,6 +96,8 @@ public class SensorTracker implements Runnable {
                     handler = new TICC2650Handler(sensor);
                 } else if (PolarH7Handler.handles(sensor)) {
                     handler = new PolarH7Handler(sensor);
+                } else if (MuseHandler.handles(sensor)) {
+                    handler = new MuseHandler(sensor);
                 } else {
                     throw new UnsupportedOperationException("Unsupported sensor :(");
                 }

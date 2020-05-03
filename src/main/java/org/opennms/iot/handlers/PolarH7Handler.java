@@ -29,24 +29,19 @@
 package org.opennms.iot.handlers;
 
 import static org.opennms.iot.Bluetooth.buildSensorFromDevice;
-import static org.opennms.iot.handlers.TICC2650Handler.getService;
+import static org.opennms.iot.Bluetooth.getService;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
-import org.opennms.iot.Handler;
 import org.opennms.iot.ble.proto.Event;
 import org.opennms.iot.ble.proto.FieldValue;
 import org.opennms.iot.ble.proto.Metric;
-import org.opennms.iot.ble.proto.Sensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.protobuf.Descriptors;
 
 import tinyb.BluetoothDevice;
 import tinyb.BluetoothGattCharacteristic;
