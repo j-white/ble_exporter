@@ -28,6 +28,7 @@
 
 package org.opennms.iot.muse;
 
+import static org.opennms.iot.Bluetooth.buildSensorFromDevice;
 import static org.opennms.iot.Bluetooth.getCharacteristic;
 import static org.opennms.iot.Bluetooth.getService;
 import static org.opennms.iot.muse.MuseConstants.EEG_UUID_TO_HANDLE_MAP;
@@ -43,8 +44,12 @@ import static org.opennms.iot.muse.MuseConstants.MUSE_SVC;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
 
+import org.opennms.iot.ble.proto.Event;
+import org.opennms.iot.ble.proto.FieldValue;
+import org.opennms.iot.ble.proto.Metric;
 import org.opennms.iot.handlers.BaseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -218,5 +223,44 @@ public class MuseHandler extends BaseHandler {
         // rc: return status, 0 is ok
         // {"ap":"headset","sp":"Blackcomb_revB","tp":"consumer","hw":"00.8","bn":1,"fw":"1.0.17","bl":"1.0.17","pv":1,"rc":0}
         LOG.info("Got control message: {}", controlMessage);
+    }
+
+    public void broadcastEegSample(EEGSample eegSample) {
+        Event.Builder eventBuilder = Event.newBuilder()
+                .setSensor(buildSensorFromDevice(sensor));
+
+        int i = 0;
+        for (Long ts : eegSample.getTimestamps()) {
+            Metric.Builder metricBuilder = Metric.newBuilder()
+                    .setName("eeg")
+                    .setTimestamp(ts);
+
+            for (Map.Entry<Integer,ChannelSamples> entry : eegSample.getData().entrySet()) {
+                int channelIndex = entry.getKey();
+                double value = entry.getValue().getValues().get(i);
+                metricBuilder.putFields(getChannelFieldName(channelIndex), FieldValue.newBuilder().setFloatValue(value).build());
+            }
+
+            eventBuilder.addMetrics(metricBuilder);
+        }
+
+        broadcast(eventBuilder.build());
+    }
+
+    private static String getChannelFieldName(int channelIndex) {
+        switch(channelIndex) {
+            case 0:
+                return "tp9";
+            case 1:
+                return "af7";
+            case 2:
+                return "af8";
+            case 3:
+                return "tp10";
+            case 4:
+                return "right_aux";
+            default:
+                return "unknown";
+        }
     }
 }

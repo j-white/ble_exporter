@@ -31,22 +31,22 @@ package org.opennms.iot.muse;
 import java.time.Instant;
 import java.util.List;
 
-public class ChannelSamples<T> {
+public class ChannelSamples {
     private int index;
-    private List<T> samples;
+    private List<Double> values;
     private Instant timestamp;
 
-    public ChannelSamples(int index, List<T> samples) {
+    public ChannelSamples(int index, List<Double> values) {
         this.index = index;
-        this.samples = samples;
+        this.values = values;
     }
 
     public int getIndex() {
         return index;
     }
 
-    public List<T> getSamples() {
-        return samples;
+    public List<Double> getValues() {
+        return values;
     }
 
     public Instant getTimestamp() {

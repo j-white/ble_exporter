@@ -35,10 +35,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class EEGSample {
-    private final Map<Integer, ChannelSamples<Integer>> data;
+    private final Map<Integer, ChannelSamples> data;
     private final List<Long> timestamps;
 
-    public EEGSample(Map<Integer, ChannelSamples<Integer>> data, List<Long> timestamps) {
+    public EEGSample(Map<Integer, ChannelSamples> data, List<Long> timestamps) {
         this.data = Objects.requireNonNull(data);
         this.timestamps = Objects.requireNonNull(timestamps);
     }
@@ -56,7 +56,7 @@ public class EEGSample {
     }
 
 
-    public Map<Integer, ChannelSamples<Integer>> getData() {
+    public Map<Integer, ChannelSamples> getData() {
         return data;
     }
 

@@ -28,18 +28,23 @@
 
 package org.opennms.iot.muse;
 
+import static org.opennms.iot.Bluetooth.buildSensorFromDevice;
 import static org.opennms.iot.muse.MuseConstants.MUSE_SAMPLING_EEG_RATE;
 
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.opennms.iot.ble.proto.Event;
+import org.opennms.iot.ble.proto.Metric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +78,7 @@ public class EEGHandler {
     private long lastTimestampEeg = 0;
 
     private int lastTmEeg = 0;
-    private Map<Integer, ChannelSamples<Integer>> eegData = new HashMap<>();
+    private Map<Integer, ChannelSamples> eegData = new HashMap<>();
 
     public EEGHandler(MuseHandler parent) {
         this.parent = Objects.requireNonNull(parent);
@@ -95,7 +100,7 @@ public class EEGHandler {
         Instant timestamp = Instant.now();
         int index = Math.floorDiv(handle - 32, 3);
 
-        ChannelSamples<Integer> samples = unpack_eeg_channel(packet);
+        ChannelSamples samples = unpack_eeg_channel(packet);
         samples.setTimestamp(timestamp);
         int tm = samples.getIndex();
 
@@ -127,7 +132,7 @@ public class EEGHandler {
                 .collect(Collectors.toList());
 
         // Push the data
-        //consumer.accept(new EEGSample(eegData, timestamps));
+        parent.broadcastEegSample(new EEGSample(eegData, timestamps));
 
         // Save last timestamp for disconnection time
         lastTimestampEeg = timestamps.get(11);
@@ -142,20 +147,25 @@ public class EEGHandler {
      * Each packet is encoded with a 16bit timestamp followed by 12 time
      * samples with a 12 bit resolution.
      *
-     * @param packet
+     * @param bytes
      */
-    protected static ChannelSamples<Integer> unpack_eeg_channel(byte[] packet) {
-        /* python
-            aa = bitstring.Bits(bytes=packet)
-            pattern = "uint:16,uint:12,uint:12,uint:12,uint:12,uint:12,uint:12, \
-                       uint:12,uint:12,uint:12,uint:12,uint:12,uint:12"
-            res = aa.unpack(pattern)
-            packetIndex = res[0]
-            data = res[1:]
-            # 12 bits on a 2 mVpp range
-            data = 0.48828125 * (np.array(data) - 2048)
-         */
-        return new ChannelSamples<>(0, Collections.emptyList());
+    protected static ChannelSamples unpack_eeg_channel(byte[] bytes) {
+        // pattern = "uint:16,uint:12,uint:12,uint:12,uint:12,uint:12,uint:12, \
+        //               uint:12,uint:12,uint:12,uint:12,uint:12,uint:12"
+        int index = (bytes[0] << 8) | (bytes[1] & 0xFF);
+
+        List<Integer> values = new LinkedList<>();
+        // Unpack the 12-bit integers in pairs so we can deal with 3 bytes at a time
+        for (int i = 2; i < bytes.length; i+=3) {
+            values.add(0xFFF & ((bytes[i] << 4) | ((bytes[i+1] >> 4) & 0x0F)));
+            values.add(0xFFF & (((bytes[i+1] << 8) & 0xF00) | (bytes[i+2] & 0xFF)));
+        }
+
+        // 12 bits on a 2 mVpp range
+        List<Double> data = values.stream()
+                .map(v -> 0.48828125 * (v - 2048))
+                .collect(Collectors.toList());
+        return new ChannelSamples(index, data);
     }
 
 }
