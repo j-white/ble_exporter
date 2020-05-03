@@ -20,6 +20,10 @@ mvn install:install-file \
    -DgeneratePom=true
 ```
 
+## gRPC
+
+Server up on 0.0.0.0:9002 - see `proto/ble_exporter.proto`
+
 ## Installing snap
 
 See https://forum.snapcraft.io/t/using-bluetooth-w-rpi4-on-uc18/16975

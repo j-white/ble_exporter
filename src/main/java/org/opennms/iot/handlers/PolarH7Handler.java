@@ -54,6 +54,7 @@ public class PolarH7Handler extends BaseHandler {
     public static final String H7_HR_CHAR = "00002a37-0000-1000-8000-00805f9b34fb";
 
     private BluetoothDevice sensor;
+    BluetoothGattCharacteristic hrValue;
 
     public PolarH7Handler(BluetoothDevice sensor) {
         this.sensor = Objects.requireNonNull(sensor);
@@ -76,8 +77,15 @@ public class PolarH7Handler extends BaseHandler {
         }
         LOG.debug("Found HR service:  {}", hrService.getUUID());
 
-        BluetoothGattCharacteristic hrValue = hrService.find(H7_HR_CHAR);
+        hrValue = hrService.find(H7_HR_CHAR);
         hrValue.enableValueNotifications(this::handleHrValue);
+    }
+
+    @Override
+    public void onKeepAlive() {
+        if (hrValue != null) {
+            hrValue.enableValueNotifications(this::handleHrValue);
+        }
     }
 
     private void handleHrValue(byte[] bytes) {
