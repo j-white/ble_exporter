@@ -36,4 +36,10 @@ public interface Handler {
     void startGatheringData() throws InterruptedException;
 
     void registerConsumer(Consumer<Event> consumer);
+
+    /**
+     * Called every 1s when connected.
+     */
+    default void onKeepAlive() { }
+
 }

@@ -64,6 +64,8 @@ public class MuseHandler extends BaseHandler {
     private final BluetoothDevice sensor;
     private final EEGHandler eegHandler = new EEGHandler(this);
 
+    private BluetoothGattCharacteristic control;
+
     public MuseHandler(BluetoothDevice sensor) {
         this.sensor = Objects.requireNonNull(sensor);
     }
@@ -83,7 +85,7 @@ public class MuseHandler extends BaseHandler {
         if (museSvc == null) {
             throw new IllegalStateException("Could not find Muse service.");
         }
-        BluetoothGattCharacteristic control = getCharacteristic(museSvc, MUSE_GATT_ATTR_STREAM_TOGGLE);
+        control = getCharacteristic(museSvc, MUSE_GATT_ATTR_STREAM_TOGGLE);
         if (control == null) {
             throw new IllegalStateException("Could not find the correct characteristics.");
         }
@@ -136,6 +138,11 @@ public class MuseHandler extends BaseHandler {
         control.writeValue(new byte[]{0x03, 0x76, 0x31, 0x0a});
     }
 
+    @Override
+    public void onKeepAlive() {
+        LOG.info("Sending keep-alive.");
+        control.writeValue(new byte[]{0x02, 0x6b, 0x0a});
+    }
 
     private StringBuilder controlStringBuilder = new StringBuilder();
 

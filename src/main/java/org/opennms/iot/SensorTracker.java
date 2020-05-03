@@ -106,7 +106,8 @@ public class SensorTracker implements Runnable {
                 handler.startGatheringData();
 
                 while(sensor.getConnected()) {
-                    Thread.sleep(500);
+                    Thread.sleep(1000);
+                    handler.onKeepAlive();
                 }
                 LOG.warn("Sensor {} disconnected.", sensorMac);
             }
