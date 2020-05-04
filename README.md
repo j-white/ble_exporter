@@ -105,19 +105,42 @@ Agent registered
 Controller B8:27:EB:D0:C1:98 ubuntu [default]
 ```
 
-## Testing on Ubuntu Core w/ Snap
+## Testing on RPi4 w/ Ubuntu Core 18 & Snap
 
 See https://forum.snapcraft.io/t/using-bluetooth-w-rpi4-on-uc18/16975
+
+Install `bluez` from the `edge` channel:
 ```
-sudo snap refresh bluez --channel=edge --devmode
+sudo snap install bluez --channel=edge --devmode
+```
+
+Create the adapter (may need to run this multiple times):
+```
 sudo hciattach /dev/ttyAMA0 bcm43xx 921600 noflow -
 ```
 
-Bluetooth on RPI4
+After success:
 ```
-sudo snap install ble_exporter_1_arm64.snap  --devmode --dangerous
-sudo snap connect ble_exporter:bluetooth-control
-sudo snap connect ble_exporter:bluez bluez
+ubuntu@localhost:~$ sudo hciattach /dev/ttyAMA0 bcm43xx 921600 noflow -
+bcm43xx_init
+Flash firmware /lib/firmware/brcm/BCM4345C0.hcd
+Set Controller UART speed to 921600 bit/s
+Device setup complete
+```
+
+`bluetoothctl` should work now:
+```
+ubuntu@localhost:~$ sudo bluez.bluetoothctl 
+[NEW] Controller DC:A6:32:1A:60:26 BlueZ 5.47 [default]
+Agent registered
+[bluetooth]# 
+```
+
+Install the snap:
+```
+sudo snap install ble-exporter_1_arm64.snap --devmode --dangerous
+sudo snap connect ble-exporter:bluetooth-control
+sudo snap connect ble-exporter:bluez bluez
 ```
 
 ## MACs
