@@ -38,12 +38,12 @@ import org.opennms.iot.handlers.PolarH7Handler;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.azure.messaging.eventhubs.EventData;
 
-public class MapperTest {
+public class IOMTMapperTest {
 
     @Test
-    public void canMapAndMarshalEventToJson() throws JsonProcessingException, JSONException {
+    public void canMapAndMarshalEventToJson() throws JSONException {
         String expectedJson = "{\"body\":{\"deviceId\":\"ag-apple-watch\",\"endDate\":\"2020-05-03T20:40:11Z\"," +
                 "\"heartRate\":\"102\",\"properties\":{},\"systemProperties\":{}}}";
 
@@ -56,7 +56,9 @@ public class MapperTest {
                         .putFields(PolarH7Handler.BPM_FIELD, FieldValue.newBuilder().setIntValue(102).build()))
                 .build();
 
-        String json = Mapper.toEventHubJson(event);
+        IOMTMapper iomtMapper = new IOMTMapper();
+        EventData eventData = iomtMapper.mapEvent(event);
+        String json = eventData.getBodyAsString();
         System.out.println("Expected JSON: " + expectedJson);
         System.out.println("Actual JSON:   " + json);
         JSONAssert.assertEquals(expectedJson, json, JSONCompareMode.LENIENT);

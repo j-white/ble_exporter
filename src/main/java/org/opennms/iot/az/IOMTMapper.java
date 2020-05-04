@@ -35,12 +35,13 @@ import org.opennms.iot.ble.proto.Event;
 import org.opennms.iot.ble.proto.Metric;
 import org.opennms.iot.handlers.PolarH7Handler;
 
+import com.azure.messaging.eventhubs.EventData;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 
-public class Mapper {
+public class IOMTMapper implements EventMapper {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -49,6 +50,15 @@ public class Mapper {
         msg.body.deviceId = event.getSensor().getHwAddress();
         addBPM(event, msg.body);
         return objectMapper.writeValueAsString(msg);
+    }
+
+    @Override
+    public EventData mapEvent(Event event) {
+        try {
+            return new EventData(toEventHubJson(event));
+        } catch (JsonProcessingException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public static class Message {

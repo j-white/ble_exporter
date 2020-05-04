@@ -29,6 +29,7 @@
 package org.opennms.iot.az;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 import org.opennms.iot.ble.proto.Event;
 import org.slf4j.Logger;
@@ -39,29 +40,22 @@ import com.azure.messaging.eventhubs.EventDataBatch;
 import com.azure.messaging.eventhubs.EventHubClientBuilder;
 import com.azure.messaging.eventhubs.EventHubProducerClient;
 import com.azure.messaging.eventhubs.models.CreateBatchOptions;
-import com.google.protobuf.util.JsonFormat;
 
 import io.grpc.stub.StreamObserver;
 
 public class EventHubExporter implements StreamObserver<Event> {
     private static final Logger LOG = LoggerFactory.getLogger(EventHubExporter.class);
 
-    private final JsonFormat.Printer jsonPrinter;
-
     private final EventHubProducerClient producer;
+    private final Function<Event, EventData> mapper;
 
-    public EventHubExporter(String connectionString, String eventHubName) {
+    public EventHubExporter(String connectionString, String eventHubName, Function<Event, EventData> mapper) {
         Objects.requireNonNull(connectionString);
         Objects.requireNonNull(eventHubName);
+        this.mapper = Objects.requireNonNull(mapper);
         producer = new EventHubClientBuilder()
                 .connectionString(connectionString, eventHubName)
                 .buildProducerClient();
-
-        final JsonFormat.TypeRegistry typeRegistry = JsonFormat.TypeRegistry.newBuilder()
-                .add(Event.getDescriptor())
-                .build();
-        jsonPrinter = JsonFormat.printer()
-                .usingTypeRegistry(typeRegistry);
     }
 
     @Override
@@ -76,9 +70,9 @@ public class EventHubExporter implements StreamObserver<Event> {
         // Map & marshal the event
         EventData eventData;
         try {
-            eventData = eventToEventHubData(event);
+            eventData = mapper.apply(event);
         } catch (Exception e) {
-            LOG.error("Marshaling JSON for event failed: {}", event, e);
+            LOG.error("Mapping event to event date failed. Event: {}", event, e);
             return;
         }
 
@@ -89,11 +83,6 @@ public class EventHubExporter implements StreamObserver<Event> {
             LOG.error("Adding to new batch failed?");
         }
         producer.send(batch);
-    }
-
-    /** Render the event to JSON in the model we are forwarding to AZ */
-    public EventData eventToEventHubData(Event event) throws Exception {
-        return new EventData(Mapper.toEventHubJson(event));
     }
 
     @Override

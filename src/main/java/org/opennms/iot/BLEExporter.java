@@ -13,15 +13,12 @@ import java.util.stream.Collectors;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Localizable;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
-import org.kohsuke.args4j.spi.Messages;
 import org.opennms.iot.az.EventHubExporter;
-import org.opennms.iot.ble.proto.BLEExporterGrpc;
+import org.opennms.iot.az.IOMTMapper;
+import org.opennms.iot.az.TSIMapper;
 import org.opennms.iot.ble.proto.Client;
-import org.opennms.iot.handlers.TICC2650Handler;
-import org.opennms.iot.handlers.PolarH7Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,10 +26,6 @@ import com.google.common.base.Strings;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import tinyb.BluetoothDevice;
-import tinyb.BluetoothException;
-import tinyb.BluetoothGattCharacteristic;
-import tinyb.BluetoothGattService;
 import tinyb.BluetoothManager;
 
 public class BLEExporter {
@@ -43,8 +36,11 @@ public class BLEExporter {
     @Option(name="-port",usage="gRPC Server port")
     private int port = 9002;
 
-    @Option(name="-eventHub",usage="Event hub name.")
-    private String eventHub;
+    @Option(name="-iomtEventHub",usage="Event hub name for IOMT formatted data")
+    private String iomtEventHub;
+
+    @Option(name="-tsiEventHub",usage="Event hub name for TSI formatted data")
+    private String tsiEventHub;
 
     @Option(name="-connectionString",usage="Azure connection string used for Event hub")
     private String connectionString;
@@ -59,7 +55,8 @@ public class BLEExporter {
 
     private List<SensorTracker> sensorTrackers = new LinkedList<>();
 
-    private EventHubExporter eventHubExporter;
+    private EventHubExporter iomtEventHubExporter;
+    private EventHubExporter tsiEventHubExporter;
 
     private boolean running = true;
 
@@ -144,15 +141,26 @@ public class BLEExporter {
     }
 
     private void startEventHubExporter() {
-        if (Strings.isNullOrEmpty(connectionString) || Strings.isNullOrEmpty(eventHub)) {
-            LOG.debug("No connection string or event hub name given. Forwarder will not be started.");
+        if (Strings.isNullOrEmpty(connectionString)) {
+            LOG.debug("No connection string given. Forwarder will not be started.");
             return;
         }
-        LOG.debug("Starting to export events to event hub on: {}", eventHub);
-        eventHubExporter = new EventHubExporter(connectionString, eventHub);
-        bleExporterSvc.streamEvents(Client.newBuilder()
-                .setName(sessionName)
-                .build(), eventHubExporter);
+        if (!Strings.isNullOrEmpty(iomtEventHub)) {
+            LOG.debug("Starting to export events as IOMT to event hub: {}", iomtEventHub);
+            IOMTMapper iomtMapper = new IOMTMapper();
+            iomtEventHubExporter = new EventHubExporter(connectionString, iomtEventHub, iomtMapper::mapEvent);
+            bleExporterSvc.streamEvents(Client.newBuilder()
+                    .setName(sessionName + "-iomt")
+                    .build(), iomtEventHubExporter);
+        }
+        if (!Strings.isNullOrEmpty(tsiEventHub)) {
+            LOG.debug("Starting to export events as TSI to event hub: {}", tsiEventHub);
+            TSIMapper tsiMapper = new TSIMapper();
+            tsiEventHubExporter = new EventHubExporter(connectionString, tsiEventHub, tsiMapper::mapEvent);
+            bleExporterSvc.streamEvents(Client.newBuilder()
+                    .setName(sessionName + "-tsi")
+                    .build(), iomtEventHubExporter);
+        }
     }
 
     private void startGrpcServer() throws IOException {
