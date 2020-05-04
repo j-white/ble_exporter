@@ -17,11 +17,15 @@ import org.kohsuke.args4j.Localizable;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 import org.kohsuke.args4j.spi.Messages;
+import org.opennms.iot.az.EventHubExporter;
 import org.opennms.iot.ble.proto.BLEExporterGrpc;
+import org.opennms.iot.ble.proto.Client;
 import org.opennms.iot.handlers.TICC2650Handler;
 import org.opennms.iot.handlers.PolarH7Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Strings;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -39,12 +43,23 @@ public class BLEExporter {
     @Option(name="-port",usage="gRPC Server port")
     private int port = 9002;
 
+    @Option(name="-eventHub",usage="Event hub name.")
+    private String eventHub;
+
+    @Option(name="-connectionString",usage="Azure connection string used for Event hub")
+    private String connectionString;
+
+    @Option(name="-sessionName",usage="Session name - used to identify one or more runs.")
+    private String sessionName = "Default session";
+
     @Argument
     private List<String> arguments = new ArrayList<>();
 
     private BLEExporterImpl bleExporterSvc = new BLEExporterImpl();
 
     private List<SensorTracker> sensorTrackers = new LinkedList<>();
+
+    private EventHubExporter eventHubExporter;
 
     private boolean running = true;
 
@@ -89,6 +104,9 @@ public class BLEExporter {
         // Now start the gRPC service
         startGrpcServer();
 
+        // Start forwarding events to EventHub
+        startEventHubExporter();
+
         sensorTrackers = arguments.stream()
                 .map(mac -> new SensorTracker(bleExporterSvc, mac))
                 .collect(Collectors.toList());
@@ -123,6 +141,17 @@ public class BLEExporter {
             }
         }
         sensorTrackers.forEach(SensorTracker::stop);
+    }
+
+    private void startEventHubExporter() {
+        if (Strings.isNullOrEmpty(connectionString) || Strings.isNullOrEmpty(eventHub)) {
+            LOG.debug("No connection string or event hub name given. Forwarder will not be started.");
+        }
+        LOG.debug("Starting to export events to event hub on: {}", eventHub);
+        eventHubExporter = new EventHubExporter(connectionString, eventHub);
+        bleExporterSvc.streamEvents(Client.newBuilder()
+                .setName(sessionName)
+                .build(), eventHubExporter);
     }
 
     private void startGrpcServer() throws IOException {

@@ -50,6 +50,9 @@ import tinyb.BluetoothGattService;
 public class PolarH7Handler extends BaseHandler {
     private static final Logger LOG = LoggerFactory.getLogger(PolarH7Handler.class);
 
+    public static final String METRIC_NAME = "polar-h7";
+    public static final String BPM_FIELD = "beats_per_minute";
+
     public static final String H7_HR_SVC = "0000180d-0000-1000-8000-00805f9b34fb";
     public static final String H7_HR_CHAR = "00002a37-0000-1000-8000-00805f9b34fb";
 
@@ -139,14 +142,14 @@ public class PolarH7Handler extends BaseHandler {
                 .setSensor(buildSensorFromDevice(sensor));
 
         Metric.Builder metricBuilder = Metric.newBuilder()
-                .setName("polar-h7")
+                .setName(METRIC_NAME)
                 .setTimestamp(received_at);
         bpm.ifPresent(val -> {
             // Skip non-positive values
             if (val <= 0) {
                 return;
             }
-            metricBuilder.putFields("beats_per_minute", FieldValue.newBuilder().setIntValue(val).build());
+            metricBuilder.putFields(BPM_FIELD, FieldValue.newBuilder().setIntValue(val).build());
         });
         ene.ifPresent(val -> {
             metricBuilder.putFields("energy_expended", FieldValue.newBuilder().setIntValue(val).build());
