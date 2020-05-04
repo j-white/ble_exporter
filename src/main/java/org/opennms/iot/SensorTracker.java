@@ -90,26 +90,29 @@ public class SensorTracker implements Runnable {
                     continue;
                 }
 
-                Handler handler;
-                // FIXME - we need a nicer way to register these
-                if (TICC2650Handler.handles(sensor)) {
-                    handler = new TICC2650Handler(sensor);
-                } else if (PolarH7Handler.handles(sensor)) {
-                    handler = new PolarH7Handler(sensor);
-                } else if (MuseHandler.handles(sensor)) {
-                    handler = new MuseHandler(sensor);
-                } else {
-                    throw new UnsupportedOperationException("Unsupported sensor :(");
-                }
 
-                handler.registerConsumer(bleExporterSvc::broadcast);
-                handler.startGatheringData();
-
-                while(sensor.getConnected()) {
-                    Thread.sleep(1000);
-                    handler.onKeepAlive();
+                try {
+                    Handler handler;
+                    // FIXME - we need a nicer way to register these
+                    if (TICC2650Handler.handles(sensor)) {
+                        handler = new TICC2650Handler(sensor);
+                    } else if (PolarH7Handler.handles(sensor)) {
+                        handler = new PolarH7Handler(sensor);
+                    } else if (MuseHandler.handles(sensor)) {
+                        handler = new MuseHandler(sensor);
+                    } else {
+                        throw new UnsupportedOperationException("Unsupported sensor :(");
+                    }
+                    handler.registerConsumer(bleExporterSvc::broadcast);
+                    handler.startGatheringData();
+                    while(sensor.getConnected()) {
+                        Thread.sleep(1000);
+                        handler.onKeepAlive();
+                    }
+                    LOG.warn("Sensor {} disconnected.", sensorMac);
+                } catch (BluetoothException blEx) {
+                    LOG.warn("Bluetooth exception with sensor: {}", sensorMac, blEx);
                 }
-                LOG.warn("Sensor {} disconnected.", sensorMac);
             }
         } catch (InterruptedException e) {
             LOG.info("Interrupted. Stopping tracking thread for: {}", sensorMac);
