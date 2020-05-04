@@ -80,8 +80,10 @@ public class Mapper {
                 body.endDate = Instant.ofEpochMilli(metric.getTimestamp()).toString();
 
                 for (String key : metric.getFieldsMap().keySet()) {
+                    // Use the first RR we find
                     if (key.startsWith("rr")) {
-                        body.rr = Double.toString(metric.getFieldsMap().get(PolarH7Handler.BPM_FIELD).getFloatValue());
+                        body.rr = Double.toString(metric.getFieldsMap().get(key).getFloatValue());
+                        break;
                     }
                 }
 
