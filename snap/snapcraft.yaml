@@ -1,4 +1,4 @@
-name: ble_exporter
+name: ble-exporter
 summary: prototype
 description: prototype
 version: '1'
@@ -16,7 +16,7 @@ plugs:
   bluez:
 
 apps:
-  ble_exporter:
+  ble-exporter:
     command: bin/ble_exporter
 
 parts:
