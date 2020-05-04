@@ -64,6 +64,8 @@ public class Mapper {
         String endDate;
         @JsonProperty
         String heartRate;
+        @JsonProperty
+        String rr;
         @JsonProperty(required = true)
         Map<String,String> properties = Maps.newLinkedHashMap();
         @JsonProperty
@@ -76,6 +78,13 @@ public class Mapper {
                 int bpm = (int)metric.getFieldsMap().get(PolarH7Handler.BPM_FIELD).getIntValue();
                 body.heartRate = Integer.toString(bpm);
                 body.endDate = Instant.ofEpochMilli(metric.getTimestamp()).toString();
+
+                for (String key : metric.getFieldsMap().keySet()) {
+                    if (key.startsWith("rr")) {
+                        body.rr = Double.toString(metric.getFieldsMap().get(PolarH7Handler.BPM_FIELD).getFloatValue());
+                    }
+                }
+
             }
         }
         return null;
