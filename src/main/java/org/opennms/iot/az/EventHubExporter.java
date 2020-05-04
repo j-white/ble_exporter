@@ -46,12 +46,13 @@ import io.grpc.stub.StreamObserver;
 public class EventHubExporter implements StreamObserver<Event> {
     private static final Logger LOG = LoggerFactory.getLogger(EventHubExporter.class);
 
+    private final String eventHubName;
     private final EventHubProducerClient producer;
     private final Function<Event, EventData> mapper;
 
     public EventHubExporter(String connectionString, String eventHubName, Function<Event, EventData> mapper) {
         Objects.requireNonNull(connectionString);
-        Objects.requireNonNull(eventHubName);
+        this.eventHubName = Objects.requireNonNull(eventHubName);
         this.mapper = Objects.requireNonNull(mapper);
         producer = new EventHubClientBuilder()
                 .connectionString(connectionString, eventHubName)
@@ -77,7 +78,7 @@ public class EventHubExporter implements StreamObserver<Event> {
         }
 
         // Forward
-        LOG.debug("Sending event (partition-key={}): {}", eventData.getPartitionKey(),
+        LOG.debug("Sending event (eventHub={}, partition-key={}): {}", eventHubName, eventData.getPartitionKey(),
                 eventData.getBodyAsString());
         if(!batch.tryAdd(eventData)) {
             LOG.error("Adding to new batch failed?");

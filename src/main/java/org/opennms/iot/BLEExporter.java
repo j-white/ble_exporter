@@ -159,7 +159,7 @@ public class BLEExporter {
             tsiEventHubExporter = new EventHubExporter(connectionString, tsiEventHub, tsiMapper::mapEvent);
             bleExporterSvc.streamEvents(Client.newBuilder()
                     .setName(sessionName + "-tsi")
-                    .build(), iomtEventHubExporter);
+                    .build(), tsiEventHubExporter);
         }
     }
 
