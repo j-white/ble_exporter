@@ -146,6 +146,7 @@ public class BLEExporter {
     private void startEventHubExporter() {
         if (Strings.isNullOrEmpty(connectionString) || Strings.isNullOrEmpty(eventHub)) {
             LOG.debug("No connection string or event hub name given. Forwarder will not be started.");
+            return;
         }
         LOG.debug("Starting to export events to event hub on: {}", eventHub);
         eventHubExporter = new EventHubExporter(connectionString, eventHub);
