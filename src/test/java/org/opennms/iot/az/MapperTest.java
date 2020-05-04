@@ -50,9 +50,9 @@ public class MapperTest {
         Event event = Event.newBuilder()
                 .setSensor(Sensor.newBuilder()
                         .setHwAddress("ag-apple-watch"))
-                .setTimestamp(1588538411000L)
                 .addMetrics(Metric.newBuilder()
                         .setName(PolarH7Handler.METRIC_NAME)
+                        .setTimestamp(1588538411000L)
                         .putFields(PolarH7Handler.BPM_FIELD, FieldValue.newBuilder().setIntValue(102).build()))
                 .build();
 

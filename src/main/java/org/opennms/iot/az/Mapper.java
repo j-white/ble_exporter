@@ -47,9 +47,7 @@ public class Mapper {
     public static String toEventHubJson(Event event) throws JsonProcessingException {
         Message msg = new Message();
         msg.body.deviceId = event.getSensor().getHwAddress();
-        msg.body.endDate = Instant.ofEpochMilli(event.getTimestamp()).toString();
-        Integer bpm = getBPM(event);
-        msg.body.heartRate = bpm != null ? Integer.toString(bpm) : null;
+        addBPM(event, msg.body);
         return objectMapper.writeValueAsString(msg);
     }
 
@@ -72,10 +70,12 @@ public class Mapper {
         Map<String,String> systemProperties = Maps.newLinkedHashMap();
     }
 
-    public static Integer getBPM(Event event) {
+    public static Integer addBPM(Event event, Body body) {
         for (Metric metric : event.getMetricsList()) {
             if(PolarH7Handler.METRIC_NAME.equals(metric.getName())) {
-                return (int)metric.getFieldsMap().get(PolarH7Handler.BPM_FIELD).getIntValue();
+                int bpm = (int)metric.getFieldsMap().get(PolarH7Handler.BPM_FIELD).getIntValue();
+                body.heartRate = Integer.toString(bpm);
+                body.endDate = Instant.ofEpochMilli(metric.getTimestamp()).toString();
             }
         }
         return null;
