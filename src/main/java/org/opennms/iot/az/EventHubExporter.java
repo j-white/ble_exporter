@@ -66,7 +66,7 @@ public class EventHubExporter implements StreamObserver<Event> {
 
     @Override
     public void onNext(Event event) {
-        LOG.debug("onNext(): {}", event);
+        LOG.trace("onNext(): {}", event);
 
         // Create a batch using the HW address as the partition key
         CreateBatchOptions batchOptions = new CreateBatchOptions();
@@ -83,7 +83,8 @@ public class EventHubExporter implements StreamObserver<Event> {
         }
 
         // Forward
-        LOG.debug("Sending data: {}", eventData);
+        LOG.debug("Sending event (partition-key={}): {}", eventData.getPartitionKey(),
+                eventData.getBodyAsString());
         if(!batch.tryAdd(eventData)) {
             LOG.error("Adding to new batch failed?");
         }
