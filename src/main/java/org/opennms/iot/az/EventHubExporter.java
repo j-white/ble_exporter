@@ -84,7 +84,7 @@ public class EventHubExporter implements StreamObserver<Event> {
 
         // Forward
         LOG.debug("Sending data: {}", eventData);
-        if(batch.tryAdd(eventData)) {
+        if(!batch.tryAdd(eventData)) {
             LOG.error("Adding to new batch failed?");
         }
         producer.send(batch);
